@@ -1,0 +1,19 @@
+{
+	"schemaVersion": 1,
+	"id": "qdwarp",
+	"version": "${version}",
+	"name": "QDWarp",
+	"description": "You have gained permanent Warp!",
+	"authors": [ "unascribed" ],
+	"license": "CC0",
+	"environment": "*",
+	"entrypoints": {
+		"main": [ "com.unascribed.qdwarp.QDWarp" ]
+	},
+	"depends": {
+		"fabricloader": ">=0.7.4",
+		"fabric-lifecycle-events-v1": "*",
+		"fabric-command-api-v2": "*",
+		"minecraft": ">=1.19"
+	}
+}

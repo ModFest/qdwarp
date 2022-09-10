@@ -22,10 +22,12 @@ import it.unimi.dsi.fastutil.floats.FloatUnaryOperator;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.entity.Entity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.HoverEvent;
@@ -103,19 +105,28 @@ public class QDWarp implements ModInitializer {
 							.suggests(warps)
 							.executes((ctx) -> {
 								var src = ctx.getSource();
-								WarpPos pos = WARPS.get(StringArgumentType.getString(ctx, "name"));
-								if (pos == null) {
-									src.sendError(Text.literal("That warp doesn't exist"));
-									return 0;
-								}
-								ServerWorld world = src.getServer().getWorld(pos.dimension());
-								if (world == null) {
-									src.sendError(Text.literal("That warp refers to a nonexistent dimension"));
-									return 0;
-								}
-								src.getPlayer().teleport(world, pos.x(), pos.y(), pos.z(), pos.yaw(), pos.pitch());
+								warp(src, src.getPlayer(), StringArgumentType.getString(ctx, "name"));
 								return 0;
 							})
+						)
+					);
+			dis.register(CommandManager.literal("warpother")
+					.requires(src -> src.hasPermissionLevel(2))
+					.then(CommandManager.argument("player", EntityArgumentType.player())
+						.then(CommandManager.argument("name", StringArgumentType.greedyString())
+								.suggests(warps)
+								.executes((ctx) -> {
+									var src = ctx.getSource();
+									var player = EntityArgumentType.getPlayer(ctx, "player");
+									String name = StringArgumentType.getString(ctx, "name");
+									warp(src, player, name);
+									src.sendFeedback(Text.literal("Warped ")
+											.append(player.getDisplayName())
+											.append(" to ")
+											.append(name), true);
+									return 0;
+								})
+							)
 						)
 					);
 			dis.register(CommandManager.literal("rmwarp")
@@ -142,8 +153,8 @@ public class QDWarp implements ModInitializer {
 			record RotChoice(String name, FloatUnaryOperator op) {}
 			PosChoice[] posChoices = {
 					new PosChoice("exact", c -> c),
-					new PosChoice("block-quadrant", c -> ((int)c*4)/4D),
-					new PosChoice("block", c -> ((int)c)+0.5)
+					new PosChoice("block-corner", c -> ((int)c*4)/4D),
+					new PosChoice("block-center", c -> ((int)c)+0.5)
 				};
 			RotChoice[] rotChoices = {
 					new RotChoice("exact", f -> f),
@@ -190,6 +201,20 @@ public class QDWarp implements ModInitializer {
 			}
 			dis.register(node);
 		});
+	}
+
+	private void warp(ServerCommandSource src, ServerPlayerEntity player, String name) {
+		WarpPos pos = WARPS.get(name);
+		if (pos == null) {
+			src.sendError(Text.literal("That warp doesn't exist"));
+			return;
+		}
+		ServerWorld world = src.getServer().getWorld(pos.dimension());
+		if (world == null) {
+			src.sendError(Text.literal("That warp refers to a nonexistent dimension"));
+			return;
+		}
+		player.teleport(world, pos.x(), pos.y(), pos.z(), pos.yaw(), pos.pitch());
 	}
 
 	private void save(MinecraftServer server) {

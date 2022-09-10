@@ -153,13 +153,13 @@ public class QDWarp implements ModInitializer {
 			record RotChoice(String name, FloatUnaryOperator op) {}
 			PosChoice[] posChoices = {
 					new PosChoice("exact", c -> c),
-					new PosChoice("block-corner", c -> ((int)c*4)/4D),
+					new PosChoice("block-corner", c -> Math.round(c*4)/4D),
 					new PosChoice("block-center", c -> ((int)c)+0.5)
 				};
 			RotChoice[] rotChoices = {
 					new RotChoice("exact", f -> f),
-					new RotChoice("45", f -> ((int)f/45)*45f),
-					new RotChoice("cardinal", f -> ((int)f/90)*90f)
+					new RotChoice("45", f -> Math.round(f/45)*45f),
+					new RotChoice("cardinal", f -> Math.round(f/90)*90f)
 			};
 			for (var pos : posChoices) {
 				var posNode = CommandManager.literal("pos-"+pos.name());

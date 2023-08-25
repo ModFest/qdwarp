@@ -24,6 +24,8 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.entity.Entity;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
@@ -34,8 +36,6 @@ import net.minecraft.text.HoverEvent;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.WorldSavePath;
-import net.minecraft.util.registry.Registry;
-import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
 
 public class QDWarp implements ModInitializer {
@@ -72,7 +72,7 @@ public class QDWarp implements ModInitializer {
 			float yaw = Float.parseFloat(iter.next());
 			float pitch = Float.parseFloat(iter.next());
 			assert !iter.hasNext();
-			return new WarpPos(RegistryKey.of(Registry.WORLD_KEY, id), x, y, z, yaw, pitch);
+			return new WarpPos(RegistryKey.of(RegistryKeys.WORLD, id), x, y, z, yaw, pitch);
 		}
 		
 	}
@@ -120,7 +120,7 @@ public class QDWarp implements ModInitializer {
 									var player = EntityArgumentType.getPlayer(ctx, "player");
 									String name = StringArgumentType.getString(ctx, "name");
 									warp(src, player, name);
-									src.sendFeedback(Text.literal("Warped ")
+									src.sendFeedback(() -> Text.literal("Warped ")
 											.append(player.getDisplayName())
 											.append(" to ")
 											.append(name), true);
@@ -141,7 +141,7 @@ public class QDWarp implements ModInitializer {
 									src.sendError(Text.literal("That warp doesn't exist"));
 									return 0;
 								}
-								src.sendFeedback(Text.literal("Deleted warp "+name), true);
+								src.sendFeedback(() -> Text.literal("Deleted warp "+name), true);
 								save(src.getServer());
 								return 0;
 							})
@@ -189,7 +189,7 @@ public class QDWarp implements ModInitializer {
 									var ent = Optional.ofNullable(src.getEntity());
 									float yaw = ent.map(Entity::getYaw).map(rotOp).orElse(0F);
 									float pitch = ent.map(Entity::getPitch).map(rotOp).orElse(0F);
-									src.sendFeedback(Text.literal("Created warp "+name), true);
+									src.sendFeedback(() -> Text.literal("Created warp "+name), true);
 									WARPS.put(name, new WarpPos(key, x, y, z, yaw, pitch));
 									save(src.getServer());
 									return 0;

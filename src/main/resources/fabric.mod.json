@@ -14,6 +14,6 @@
 		"fabricloader": ">=0.7.4",
 		"fabric-lifecycle-events-v1": "*",
 		"fabric-command-api-v2": "*",
-		"minecraft": ">=1.19"
+		"minecraft": ">=1.20"
 	}
 }

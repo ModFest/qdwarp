@@ -1,22 +1,22 @@
-"A really simple warps mod for Fabric/Quilt servers, originally created for (but not during) ModFest: Singularity. Warps are stored in an easily readable and editable `warps.ini` file inside of the world save.
+"A really simple warps mod for servers, originally created for (but not during) ModFest: Singularity. Warps are stored in an easily readable and editable `warps.ini` file inside the world save.
 
-It adds four commands:
+## Commands
 
-## /warp `name`
+### /warp `name`
 Can be used by anyone.
     
 Teleport to the warp named `name`, even if it's in another dimension.
 
 Supports full lenient suggestions. e.g. `/warp salad` will turn up a warp named `fruit-salad`.
 
-## /warpother `player` `name`
+### /warpother `player` `name`
 Can be used by command blocks and operators.
 
 Warp the given `player` to the warp named `name`, as if they themselves had run `/warp name`.
 
 Useful for replacing command blocks with hardcoded `/execute as @p in minecraft:the_nether run tp @s -27 40 123` or similar. `/warpother @p nether-test` is a lot nicer and easier to work with.
 
-## /mkwarp `pos-mode` `rot-mode` `name`
+### /mkwarp `pos-mode` `rot-mode` `name`
 Requires operator.
 
 Create a new warp where you're standing.
@@ -35,7 +35,7 @@ The Y coordinate is always kept as-is.
 
 The `name` can be anything. Really. Anything.
 
-## /rmwarp `name`
+### /rmwarp `name`
 Requires operator.
 
 Delete an existing warp.

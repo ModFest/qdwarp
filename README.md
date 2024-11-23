@@ -1,4 +1,4 @@
-"A really simple warps mod for servers, originally created for (but not during) ModFest: Singularity. Warps are stored in an easily readable and editable `warps.ini` file inside the world save.
+Really simple warps mod for servers, originally created for (but not during) ModFest: Singularity. Warps are stored in an easily readable and editable `warps.ini` file inside the world save.
 
 ## Commands
 

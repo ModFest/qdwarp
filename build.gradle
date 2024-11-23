@@ -1,124 +1,106 @@
-buildscript {
-	repositories {
-		mavenCentral()
-		gradlePluginPortal()
-	}
-	dependencies {
-		classpath 'com.google.code.gson:gson:2.8.7'
-		classpath 'com.modrinth.minotaur:Minotaur:2.4.3'
-		classpath 'gradle.plugin.com.matthewprenger:CurseGradle:1.4.0'
-	}
-}
+//file:noinspection GroovyAssignabilityCheck
+//file:noinspection GroovyAccessibility
 plugins {
-	id 'fabric-loom' version '0.12-SNAPSHOT'
-	id 'io.github.juuxel.loom-quiltflower' version '1.7.3'
-	id 'maven-publish'
+	id "maven-publish"
+	alias libs.plugins.loom
+	alias libs.plugins.githubRelease
+	alias libs.plugins.minotaur
 }
 
-if (System.getenv("MODRINTH_TOKEN")) {
-	apply plugin: "com.modrinth.minotaur"
-}
-if (System.getenv("CURSE_TOKEN")) {
-	apply plugin: "com.matthewprenger.cursegradle"
-}
-
-sourceCompatibility = JavaVersion.toVersion(17)
-targetCompatibility = JavaVersion.toVersion(17)
-
-archivesBaseName = project.archives_base_name
-version = project.mod_version
-if (version.contains("{COMMIT}")) {
-	version = version.replace("{COMMIT}", 'git rev-parse --short HEAD'.execute().getText().trim())
-}
-if (version.contains("{DIRTY}")) {
-	def dirty = !'git diff-index HEAD'.execute().in.text.trim().isEmpty()
-	version = version.replace("{DIRTY}", dirty ? '-dirty' : '')
-}
-if (version.contains("{COMMITNUM}")) {
-	version = version.replace("{COMMITNUM}", 'git rev-list --count HEAD'.execute().getText().trim())
-}
-group = project.maven_group
+version = "$baseVersion+$branch"
+archivesBaseName = project.slug
 
 repositories {
-	maven {
-		url 'https://repo.unascribed.com'
-		content {
-			includeGroup 'com.unascribed'
-		}
-	}
-	maven {
-		url "https://maven.shedaniel.me/"
-		content {
-			includeGroup 'me.shedaniel'
-			includeGroup 'me.shedaniel.cloth'
-			includeGroup 'me.shedaniel.cloth.api'
-			includeGroup 'dev.architectury'
-		}
-	}
-	maven {
-		url 'https://maven.terraformersmc.com/releases/'
-		content {
-			includeGroup 'dev.emi'
-			includeGroup 'com.terraformersmc'
-		}
-	}
-	maven {
-		url 'https://ladysnake.jfrog.io/artifactory/mods'
-		content {
-			includeGroup 'dev.onyxstudios.cardinal-components-api'
-		}
-	}
-	maven {
-		url 'https://maven.cafeteria.dev/releases/'
-		content {
-			includeGroup 'me.luligabi'
-		}
-	}
-	maven {
-		url 'https://maven.quiltmc.org/repository/release'
-		content {
-			includeGroup 'org.quiltmc'
-		}
-	}
-	mavenLocal()
+	maven { url "https://repo.sleeping.town/" }
 }
 
 dependencies {
-	minecraft "com.mojang:minecraft:${minecraft_version}"
-	mappings "org.quiltmc:quilt-mappings:1.20.1+build.12:intermediary-v2"
-	modImplementation "net.fabricmc:fabric-loader:${loader_version}"
+//	implementation libs.kaleidoConfig
+//	include libs.kaleidoConfig
 
-	modImplementation fabricApi.module('fabric-lifecycle-events-v1', fabric_version)
-	modImplementation fabricApi.module('fabric-command-api-v2', fabric_version)
+	minecraft libs.mc
+	mappings variantOf(libs.yarn) { classifier "v2" }
+	modImplementation libs.fl
+
+	modImplementation libs.fapi
 }
 
 processResources {
-	inputs.property "version", project.version
+	final Map<String, String> meta = [
+		version       : version,
+		modId         : modId,
+		modName       : modName,
+		modDescription: modDescription,
+		homepage      : "https://modrinth.com/mod/${slug}",
+		issues        : "https://github.com/${user}/${slug}/issues",
+		sources       : "https://github.com/${user}/${slug}",
+		license       : license,
+		authors       : authors.split(", ").join("\",\n    \""),
+		contributors  : contributors.split(", ").join("\",\n    \""),
+		members       : "${authors}. Contributions by ${contributors}",
+		mc            : compatibleVersions.split(", ")[0],
+		fl            : libs.versions.fl.get(),
+		fapi          : libs.versions.fapi.get()
+	]
+	inputs.properties(meta)
+	filesMatching("*.mod.json") { expand(meta) }
+	filesMatching("META-INF/*mods.toml") { expand(meta) }
+}
 
-	filesMatching("fabric.mod.json") {
-		expand "version": project.version
-	}
+tasks.withType(JavaCompile).configureEach {
+	it.options.encoding = "UTF-8"
+	it.options.release = 17
 }
 
 java {
 	withSourcesJar()
-}
-
-tasks.withType(JavaCompile).configureEach {
-	// ensure that the encoding is set to UTF-8, no matter what the system default is
-	// this fixes some edge cases with special characters not displaying correctly
-	// see http://yodaconditions.net/blog/fix-for-java-file-encoding-problems-with-gradle.html
-	// If Javadoc is generated, this must be specified in that task too.
-	it.options.encoding = "UTF-8"
-}
-
-tasks.withType(AbstractArchiveTask) {
-	preserveFileTimestamps = false
-	reproducibleFileOrder = true
+	sourceCompatibility = JavaVersion.VERSION_17
+	targetCompatibility = JavaVersion.VERSION_17
 }
 
 jar {
 	from("LICENSE") {
-		rename { "${it}_${project.archivesBaseName}"}
+		rename { "${it}_${archivesBaseName}" }
 	}
+}
+
+publishing {
+	publications {
+		mavenJava(MavenPublication) {
+			from components.java
+		}
+	}
+}
+
+githubRelease {
+	token = "$System.env.GITHUB_TOKEN"
+	owner = project.user
+	repo = slug
+	tagName = "v${baseVersion}+${tagBranch}"
+	targetCommitish = tagBranch
+	releaseAssets = remapJar
+	releaseName = "v${baseVersion}"
+	allowUploadToExisting = true
+	generateReleaseNotes = true
+	body = !file("CHANGELOG.md").exists() ? "" : rootProject.file("CHANGELOG.md").text
+}
+
+modrinth {
+	token = "$System.env.MODRINTH_TOKEN"
+	projectId = slug
+	versionNumber = project.version
+	uploadFile = remapJar
+	gameVersions = compatibleVersions.split(", ").toList()
+	loaders = compatibleLoaders.split(", ").toList()
+	changelog = !file("CHANGELOG.md").exists() ? "" : rootProject.file("CHANGELOG.md").text + "\n\nChangelog: https://github.com/${user}/${slug}/releases/tag/v${baseVersion}+${tagBranch}"
+	syncBodyFrom = rootProject.file("README.md").text
+	dependencies {
+		required.version libs.fapi.get().getName(), libs.versions.fapi.get()
+	}
+}
+
+tasks.register("fullRelease") {
+	group "publishing"
+	dependsOn "githubRelease"
+	dependsOn "modrinth"
 }

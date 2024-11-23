@@ -65,7 +65,7 @@ public class QDWarp implements ModInitializer {
 		
 		public static WarpPos fromString(String str) {
 			var iter = COMMA_SPLITTER.split(str).iterator();
-			Identifier id = new Identifier(iter.next());
+			Identifier id = Identifier.tryParse(iter.next());
 			double x = Double.parseDouble(iter.next());
 			double y = Double.parseDouble(iter.next());
 			double z = Double.parseDouble(iter.next());

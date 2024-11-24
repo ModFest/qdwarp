@@ -154,7 +154,7 @@ public class QDWarp implements ModInitializer {
 			PosChoice[] posChoices = {
 					new PosChoice("exact", c -> c),
 					new PosChoice("block-corner", c -> Math.round(c*4)/4D),
-					new PosChoice("block-center", c -> ((int)c)+0.5)
+					new PosChoice("block-center", c -> (c < 0 ? Math.floor(c) : (int) c) + 0.5)
 				};
 			RotChoice[] rotChoices = {
 					new RotChoice("exact", f -> f),
